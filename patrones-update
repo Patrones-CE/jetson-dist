@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+
+set -e
+set -o pipefail
+
+UPDATE_URL='https://raw.githubusercontent.com/Patrones-CE/jetson-dist/main/patrones-update'
+
+if [ $UID -ne 0 ]; then
+	exec sudo "$0" "$USER"
+elif [ $# -ne 1 ]; then
+	echo "$0 must be run as a non-root user" >&2
+	exit 1
+fi
+
+if [ -z "$PATRONES_UPDATE_CHECK" ]; then
+	export PATRONES_UPDATE_CHECK=1
+	DL_TMP="$(mktemp)"
+	trap 'rm -f -- "$DL_TMP"' EXIT
+
+	if ! wget -O "$DL_TMP" "$UPDATE_URL"; then
+		echo "$0: warning: update failed" >&2
+	elif ! cmp -s -- "$DL_TMP" "$0"; then
+		chmod +x -- "$DL_TMP"
+		mv -- "$DL_TMP" "$0"
+		exec -- "$0" "$@"
+	fi
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+
+BOOT_USER="$1"
+WITH_PYTORCH=1
+
+apt -y update
+apt -y upgrade
+
+if [ -n "$WITH_PYTORCH" ]; then
+	apt -y install \
+		autoconf \
+		bc \
+		build-essential \
+		g++-8 \
+		gcc-8 \
+		clang-8 \
+		lld-8 \
+		gettext-base \
+		gfortran-8 \
+		iputils-ping \
+		libbz2-dev \
+		libc++-dev \
+		libcgal-dev \
+		libffi-dev \
+		libfreetype6-dev \
+		libhdf5-dev \
+		libjpeg-dev \
+		liblzma-dev \
+		libncurses5-dev \
+		libncursesw5-dev \
+		libpng-dev \
+		libreadline-dev \
+		libssl-dev \
+		libsqlite3-dev \
+		libxml2-dev \
+		libxslt-dev \
+		locales \
+		moreutils \
+		openssl \
+		python-openssl \
+		rsync \
+		scons \
+		python3-pip \
+		libopenblas-dev
+fi
+
+if [ -n "$WITH_TENSORFLOW" ]; then
+	apt -y install \
+		libhdf5-serial-dev \
+		hdf5-tools \
+		libhdf5-dev \
+		zlib1g-dev \
+		zip \
+		libjpeg8-dev \
+		liblapack-dev \
+		libblas-dev \
+		gfortran
+fi
+
+apt -y install \
+	nvidia-cuda \
+	libomp5 \
+	python3-pip
+
+ln -sf /usr/lib/aarch64-linux-gnu/libomp.so.5 /usr/lib/aarch64-linux-gnu/libomp.so
+
+pip3 install --upgrade pip
+
+pip3 install -U \
+	testresources \
+	setuptools==65.5.0
+
+if [ -n "$WITH_PYTORCH" ]; then
+	pip3 install \
+		aiohttp \
+		numpy=='1.19.4' \
+		scipy=='1.5.3'
+
+	pip3 install --ignore-installed PyYAML
+
+	export "LD_LIBRARY_PATH=/usr/lib/llvm-8/lib:$LD_LIBRARY_PATH"
+	pip3 install --upgrade protobuf
+	
+	pip3 install --no-cache \
+		'https://developer.download.nvidia.com/compute/redist/jp/v461/pytorch/torch-1.11.0a0+17540c5+nv22.01-cp36-cp36m-linux_aarch64.whl'
+fi
+
+if [ -n "$WITH_TENSORFLOW" ]; then
+	pip3 install -U \
+		numpy==1.22 \
+		future==0.18.2 \
+		mock==3.0.5 \
+		keras_preprocessing==1.1.2 \
+		keras_applications==1.0.8 \
+		gast==0.4.0 \
+		protobuf \
+		pybind11 \
+		cython \
+		pkgconfig \
+		packaging \
+		h5py==3.6.0
+
+	pip3 install --no-cache \
+		'https://developer.download.nvidia.com/compute/redist/jp/v461/tensorflow/tensorflow-2.7.0+nv22.1-cp36-cp36m-linux_aarch64.whl'
+fi
+
+pip3 install \
+	jupyter \
+	matplotlib \
+	optuna \
+	pandas \
+	pandas-profiling \
+	pillow \
+	scikit-learn \
+	seaborn \
+	tabulate
+
+if [ -n "$WITH_PYTORCH" ]; then
+	torchvision \
+	torchaudio \
+	torchmetrics
+fi
+
+if [ -n "$WITH_TENSORFLOW" ]; then
+	pip3 install \
+		tensorflow-datasets \
+fi
+
+apt -y autoremove
+[ ! -f /var/run/reboot-required ] || systemctl reboot
