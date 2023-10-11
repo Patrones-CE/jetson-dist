@@ -24,6 +24,8 @@ if [ -z "$PATRONES_UPDATE_CHECK" ]; then
 		mv -v -- "$DL_TMP" "$0"
 		exec -- "$0" "$@"
 	fi
+else
+	echo "$0: updated to rev $(sha256sum "$0" | cut -d' ' -f1)" >&2
 fi
 
 export DEBIAN_FRONTEND=noninteractive
