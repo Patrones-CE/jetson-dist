@@ -168,12 +168,14 @@ After=syslog.target network.target
 User=$BOOT_USER
 Group=$BOOT_USER
 ExecStart=/usr/local/bin/jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser
+WorkingDirectory=/home/$BOOT_USER
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
+[ "$(systemctl is-active jupyter-notebook)" != active ] || systemctl restart jupyter-notebook
 systemctl enable --now jupyter-notebook
 
 apt -y autoremove
