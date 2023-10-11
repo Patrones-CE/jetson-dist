@@ -21,7 +21,7 @@ if [ -z "$PATRONES_UPDATE_CHECK" ]; then
 		echo "$0: warning: update failed" >&2
 	elif ! cmp -s -- "$DL_TMP" "$0"; then
 		chmod +x -- "$DL_TMP"
-		mv -- "$DL_TMP" "$0"
+		mv -v -- "$DL_TMP" "$0"
 		exec -- "$0" "$@"
 	fi
 fi
