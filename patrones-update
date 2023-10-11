@@ -20,7 +20,7 @@ if [ -z "$PATRONES_UPDATE_CHECK" ]; then
 	if ! wget -O "$DL_TMP" "$UPDATE_URL"; then
 		echo "$0: warning: update failed" >&2
 	elif ! cmp -s -- "$DL_TMP" "$0"; then
-		chmod +x -- "$DL_TMP"
+		chmod 755 -- "$DL_TMP"
 		mv -v -- "$DL_TMP" "$0"
 		exec -- "$0" "$@"
 	fi
