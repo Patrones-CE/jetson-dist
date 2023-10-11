@@ -154,5 +154,22 @@ if [ -n "$WITH_TENSORFLOW" ]; then
 		tensorflow-datasets \
 fi
 
+cat >/etc/systemd/system/jupyter-notebook.service <<EOF
+[Unit]
+Description=Jupyter Notebook
+After=syslog.target network.target
+
+[Service]
+User=$BOOT_USER
+Group=$BOOT_USER
+ExecStart=/usr/local/bin/jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now jupyter-notebook
+
 apt -y autoremove
 [ ! -f /var/run/reboot-required ] || systemctl reboot
