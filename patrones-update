@@ -148,14 +148,15 @@ pip3 install \
 	tabulate
 
 if [ -n "$WITH_PYTORCH" ]; then
-	torchvision \
-	torchaudio \
-	torchmetrics
+	pip3 install \
+		torchvision \
+		torchaudio \
+		torchmetrics
 fi
 
 if [ -n "$WITH_TENSORFLOW" ]; then
 	pip3 install \
-		tensorflow-datasets \
+		tensorflow-datasets
 fi
 
 cat >/etc/systemd/system/jupyter-notebook.service <<EOF
