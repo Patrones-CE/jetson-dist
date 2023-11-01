@@ -152,7 +152,7 @@ if [ -n "$WITH_TENSORFLOW" ]; then
 
 	pip3 install \
 		--extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v461 \
-		tensorflow-gpu
+		tensorflow
 fi
 
 pip3 install \
