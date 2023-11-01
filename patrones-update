@@ -32,6 +32,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 BOOT_USER="$1"
 WITH_PYTORCH=1
+WITH_TENSORFLOW=1
 
 apt -y update
 apt -y upgrade
@@ -99,7 +100,7 @@ pip3 install --upgrade pip
 if [ -n "$WITH_TENSORFLOW" ]; then
 	pip3 install -U \
 		testresources \
-		setuptools==65.5.0
+		setuptools
 fi
 
 if [ -n "$WITH_PYTORCH" ]; then
@@ -112,28 +113,46 @@ if [ -n "$WITH_PYTORCH" ]; then
 
 	export "LD_LIBRARY_PATH=/usr/lib/llvm-8/lib:$LD_LIBRARY_PATH"
 	pip3 install --upgrade protobuf
-	
+
 	pip3 install --no-cache \
 		'https://developer.download.nvidia.com/compute/redist/jp/v461/pytorch/torch-1.11.0a0+17540c5+nv22.01-cp36-cp36m-linux_aarch64.whl'
 fi
 
 if [ -n "$WITH_TENSORFLOW" ]; then
+	ln -fsv /usr/include/locale.h /usr/include/xlocale.h
+
+	# https://forums.developer.nvidia.com/t/failed-building-wheel-of-h5py/263322/5
+
 	pip3 install -U \
-		numpy==1.22 \
-		future==0.18.2 \
-		mock==3.0.5 \
-		keras_preprocessing==1.1.2 \
-		keras_applications==1.0.8 \
-		gast==0.4.0 \
+		Cython==0.29.36 \
+		pkgconfig
+
+	cd /tmp
+	rm -rf h5py
+	git clone https://github.com/h5py/h5py.git
+	cd h5py
+	git config user.name "$USER"
+	git config user.email "$USER@$(hostname)"
+	git checkout 3.1.0
+	git cherry-pick 3bf862daa4ebeb2eeaf3a0491e05f5415c1818e4
+	H5PY_SETUP_REQUIRES=0 pip3 install . --no-deps --no-build-isolation
+	cd ..
+	rm -rf h5py
+
+	pip3 install -U \
+		numpy==1.19.4 \
+		future \
+		mock \
+		keras_preprocessing \
+		keras_applications \
+		gast==0.2.1 \
 		protobuf \
 		pybind11 \
-		cython \
-		pkgconfig \
-		packaging \
-		h5py==3.6.0
+		packaging
 
-	pip3 install --no-cache \
-		'https://developer.download.nvidia.com/compute/redist/jp/v461/tensorflow/tensorflow-2.7.0+nv22.1-cp36-cp36m-linux_aarch64.whl'
+	pip3 install \
+		--extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v461 \
+		tensorflow
 fi
 
 pip3 install \
