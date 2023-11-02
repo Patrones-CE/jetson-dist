@@ -176,7 +176,7 @@ fi
 
 if [ -n "$WITH_TENSORFLOW" ]; then
 	pip3 install \
-		keras \
+		keras=='2.6.*' \
 		tensorflow-datasets
 fi
 
